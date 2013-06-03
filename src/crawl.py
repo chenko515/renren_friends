@@ -1,13 +1,14 @@
 #-*-coding:utf-8-*-
 
-
 '''
 Created on 2013-5-18
 
 @author: chenko
 '''
 
+
 import re
+import cPickle as pickle
 from BeautifulSoup import BeautifulSoup
 
 from request import Request
@@ -31,9 +32,8 @@ class Crawl():
 
         http_request = Request(self.url)
         rsp_src = http_request.get_response()
-        print(rsp_src)
         soup = BeautifulSoup(rsp_src)
-        text = str(soup.find_all("a", attrs={"title": "最后页"}))
+        text = str(soup.findAll("a", attrs={"title": "最后页"}))  # str()
         pattern = "curpage=[0-9]+"
         r = re.search(pattern, text)
         result = int(text[r.start() + 8: r.end()])
@@ -44,8 +44,8 @@ class Crawl():
         '''
 
         friends = Friends(self.core_uid)
-#        pages = self.friend_pages()
-        pages = 0  # For debug
+        pages = self.friend_pages()
+#         pages = 0  # For debug
 
         for self.curpage in range(0, pages + 1):
             self.url = ("http://friend.renren.com/GetFriendList.do?"
@@ -73,7 +73,10 @@ class Crawl():
                             "network_name": network_name,
                             }
                 friends.dict[uid] = userinfo
-                print(userinfo)
+#                 # for debug
+#                 print userinfo["name"], userinfo["network_class"], userinfo["network_name"]
+        else:
+            pass
 
 
 class Friends():
@@ -85,6 +88,12 @@ class Friends():
         self.root_uid = root_uid
 
 
+class Store():
+    '''Store friends via shelve and pickle
+    '''
+    
+    
+    
 #**************************************************************
 
 
