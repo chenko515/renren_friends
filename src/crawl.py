@@ -20,16 +20,24 @@ from request import Request
 class Crawl():
     '''Crawl friends
     '''
-    
-    dict = {}
         
     def __init__(self, root_uid, hops):
-        self.root_uid = root_uid
         self.depths = hops
+        # start from hop0, 6 hops at most 
+        self.friends_hops = [ {} for dict in range(self.depths + 1) ]
+        self.root_uid = root_uid
+        self.friends_hops[0][self.root_uid] = {
+            "name" : "王琛",
+            "network_class" : "城市",
+            "network" : "上海市",
+            "hop" : 0,
+        }
     
-    def crawl(self, hops):
-        for hop in range(1, hops + 1):
-            friends = Friends(self.root_uid)
+    def start_crawl(self):
+        for friends_hop in self.friends_hops:
+#             cur_hop = pre_hop
+            for friend in friends_hop:
+                Friends(friend)
                 
 
 class Friends():
@@ -40,9 +48,9 @@ class Friends():
         self.core_uid = core_uid
         self.curpage = 0
         self.uid = self.core_uid  # !Might be redundant
-        self.url = ("http://friend.renren.com/GetFriendList.do?"
-                    "curpage={0}&id={1}")\
-                    .format(self.curpage, self.uid)
+        self.url = (
+            "http://friend.renren.com/GetFriendList.do?"
+            "curpage={0}&id={1}").format(self.curpage, self.uid)
 
     def friend_pages(self):
         '''Count friend pages
@@ -58,7 +66,7 @@ class Friends():
         result = int(text[r.start() + 8: r.end()])
         return result
 
-    def parse_friends(self, hop):
+    def parse_friends(self, current_hop):
         '''Parse the friend list page and get the friends info
         '''
 
@@ -85,16 +93,17 @@ class Friends():
                 name = str(dl.dd.a.string)
                 network_class = str(dl.findAll("dt")[1].string)
                 network_name = str(dl.findAll("dd")[1].string)
-                userinfo = {"name": name,
-                            "network_class": network_class,
-                            "network_name": network_name,
-                            "hop": hop,
-                            }
-                friends.dict[uid] = userinfo
-                friends.store_friends()
+                userinfo = {
+                    "name": name,
+                    "network_class": network_class,
+                    "network_name": network_name,
+                    "hop": current_hop,
+                }
+                Friends.friends_hops[friends_hop][uid] = userinfo
+                Friends.store_friends()
 #                 # for debug
 #                 print userinfo["name"], userinfo["network_class"], userinfo["network_name"]
-        else:
+        else:  #!!!
             pass
 
 
@@ -102,11 +111,11 @@ class Friends():
         '''Store friends via shelve and pickle
         '''
         with closing(shelve.open('./friends.db')) as s:
-            s[self.core_uid] = pickle.dumps(self.dict[self.core_uid])
+            s[self.core_uid] = pickle.dumps(self.friends_hops[self.core_uid])
             
         # For test
         with closing(shelve.open('./friends.db')) as s:
-            tmp = s[self.dict.core_uid]
+            tmp = s[self.friends_hops.core_uid]
             print(pickle.loads(tmp))
     
 #**************************************************************
@@ -114,4 +123,5 @@ class Friends():
 
 # Run as main module
 if __name__ == '__main__':
-    crawl = Crawl("259219190", 1)
+    crawl = Crawl("247631683", 1)
+    crawl.start_crawl()
