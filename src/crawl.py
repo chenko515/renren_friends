@@ -6,43 +6,42 @@ Created on 2013-5-18
 @author: chenko
 '''
 
-
+from __future__ import print_function
+from contextlib import closing
+from BeautifulSoup import BeautifulSoup
 import re
 import cPickle as pickle
 import shelve
-from contextlib import closing 
-from BeautifulSoup import BeautifulSoup
 
 
 from request import Request
 
 
 class Crawl():
-    '''Crawl friends
+    '''Crawl the friends circle
     '''
+    circle = {}
 
-    friends = {}
-        
     def __init__(self, root_uid, hops):
         self.depths = hops
-        # start from hop0, 6 hops at most 
+        # start from hop0, 6 hops at most
         self.root_uid = root_uid
-        Crawl.friends[self.root_uid] = {
-            "friends" : {},
-            "name" : "王琛",
-            "network_class" : "城市",
-            "network" : "上海市",
-            "hop" : 0,
+        self.circle[self.root_uid] = {
+            "friends": set([]),
+            "name": "王琛",
+            "network_class": "城市",
+            "network": "上海市",
+            "hop": 0,
         }
-    
+
     def start_crawl(self):
         for cur_hop in range(0, self.depths):
-            for friend in self.friends:
-                if(friend["hop"] == cur_hop):                    
+            for friend in self.circle:
+                if(self.circle[friend]["hop"] == cur_hop):
                     parent = Friends(friend)
-                    children = parent.parse_friends(cur_hop)
-                    # !!!
-                    parent.store_friends(children, cur_hop)
+                    buffer_circle = parent.parse_friends(cur_hop)
+                    self.circle.update(buffer_circle)
+                    parent.store_friends(cur_hop)
             else:
                 cur_hop += 1
         else:
@@ -57,15 +56,14 @@ class Friends():
     def __init__(self, core_uid):
         self.core_uid = core_uid
         self.curpage = 0
-        self.uid = self.core_uid  # !Might be redundant
         self.url = (
             "http://friend.renren.com/GetFriendList.do?"
-            "curpage={0}&id={1}").format(self.curpage, self.uid)
+            "curpage={0}&id={1}").format(self.curpage, self.core_uid)
 
     def friend_pages(self):
         '''Count friend pages
         '''
-        self.url.format(self.curpage, self.uid)
+        self.url.format(self.curpage, self.core_uid)
 
         http_request = Request(self.url)
         rsp_src = http_request.get_response()
@@ -79,14 +77,14 @@ class Friends():
     def parse_friends(self, cur_hop):
         '''Parse the friend list page and get the friends info
         '''
-
+        buffer_circle = {}
         pages = self.friend_pages()
 #         pages = 0  # For debug
 
         for self.curpage in range(0, pages + 1):
             self.url = ("http://friend.renren.com/GetFriendList.do?"
                         "curpage={0}&id={1}")\
-                        .format(self.curpage, self.uid)
+                        .format(self.curpage, self.core_uid)
             http_request = Request(self.url)
             rsp_src = http_request.get_response()
 #             print(rsp_src)  # For debug
@@ -99,40 +97,45 @@ class Friends():
             for dl in friends_list_divs:
                 # Fetch uid as int type
                 uid = int(dl.dd.a["href"][36:])
-                if(uid in crawl.friends)
-                
-                # Being string rather than NavigableString, shelve later
-                name = str(dl.dd.a.string)
-                network_class = str(dl.findAll("dt")[1].string)
-                network_name = str(dl.findAll("dd")[1].string)
-                userinfo = {
-                    "friends" : {},
-                    "name": name,
-                    "network_class": network_class,
-                    "network_name": network_name,
-                    "hop": cur_hop,
-                }
-                crawl.friends[uid] = userinfo
-#                 for debug
-#                 print userinfo["name"], userinfo["network_class"], userinfo["network_name"]
-        # !!!
-        else:
-            pass
+                # Add new friend to my circle
+                if(uid not in crawl.circle):
+                    # Being string rather than NavigableString, shelve later
+                    name = str(dl.dd.a.string)
+                    network_class = str(dl.findAll("dt")[1].string)
+                    network_name = str(dl.findAll("dd")[1].string)
+                    userinfo = {
+                        "friends": set([]),
+                        "name": name,
+                        "network_class": network_class,
+                        "network_name": network_name,
+                        "hop": cur_hop,
+                    }
+                    buffer_circle[uid] = userinfo
+                    # Update relationship
+                    # Add parent
+                    buffer_circle[uid]["friends"].add(self.core_uid)
+                    # Add child
+                    crawl.circle[self.core_uid]["friends"].add(uid)
+
+                    #!!! For Debug
+                    for i in buffer_circle[uid]:
+                        print (buffer_circle[uid][i])
+                    print()
+
+        return buffer_circle
 
     def store_friends(self, children, cur_hop):
         '''Store friends via shelve and pickle
         '''
-        
-        crawl.friends_hops[cur_hop].
-        
-        with closing(shelve.open('./friends.db')) as s:
-            s[self.core_uid] = pickle.dumps(self.friends_hops[self.core_uid])
-            
-        # For test
-        with closing(shelve.open('./friends.db')) as s:
-            tmp = s[self.friends_hops.core_uid]
-            print(pickle.loads(tmp))
-    
+
+        with closing(shelve.open('./circle.db', writeback=True)) as s:
+            s["circle"] = pickle.dumps(crawl.circle)
+
+        #!!! For Debug
+        with closing(shelve.open('./circle.db')) as s:
+            tmp = s["circle"]
+            print (pickle.loads(tmp), end='')
+
 #**************************************************************
 
 

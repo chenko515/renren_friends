@@ -14,7 +14,7 @@ from contextlib import closing
 
 
 # Set session ID: t from renren.com cookie via Chrome
-COOKIE_T = r"7a1816c8b2b641b9db415d0490acf46a3"
+COOKIE_T = r"2e198648107639174621a5ac870d3c813"
 
 # # Directory to store the fetched page
 # RSP_HTML_DIR = r"./page.html"
