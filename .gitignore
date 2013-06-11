@@ -1,3 +1,5 @@
 .project
 .pydevproject
 /src/*.pyc
+/src/*.db
+/erc/*.txt
