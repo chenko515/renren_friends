@@ -6,32 +6,29 @@ Created on 2013-5-18
 @author: chenko
 '''
 
+from __future__ import print_function
 import cPickle as pickle
 import shelve
-from contextlib import closing    
+from contextlib import closing
 
 
 with closing(shelve.open('./friends.db')) as s:
-    _list1 = [1, 2, 3]
-    _dict1 = {"a": 4, "b": 5, "c": 6}     
-    t1 = pickle.dumps(_list1)
-    t2 = pickle.dumps(_dict1)    
-    s['t1'] = t1
-    s['t2'] = t2
+    circle = {}
+    circle[12345] = {
+        "friends": set([]),
+        "name": "王琛",
+        "network_class": "城市",
+        "network": "上海市",
+        "hop": 0,
+    }
+    s["circle"] = pickle.dumps(circle)
 
 with closing(shelve.open('./friends.db')) as s:
-    t11 = s['t1']
-    t22 = s['t2']
-
-print(pickle.loads(t11))
-print(pickle.loads(t22))
-
-#     print(t1)
-#     print(t2)
-     
-#     _list2 = pickle.loads(t1)
-#     _dict2 = pickle.loads(t2)
-#     _dict2["d"] = 4
-      
-#     print(_list2)
-#     print(_dict2)
+    circle = pickle.loads(s["circle"])
+    for friend in circle:
+        print(friend, end=' ')
+        print (circle[friend]["name"], end=' ')
+        print (circle[friend]["network_class"], end=' ')
+        print (circle[friend]["network"], end=' ')
+        print (circle[friend]["hop"], end=' ')
+        print (circle[friend]["friends"])

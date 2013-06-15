@@ -14,7 +14,7 @@ from contextlib import closing
 
 
 # Set session ID: t from renren.com cookie via Chrome
-COOKIE_T = r"be14a6780d76a4b55641f334c2bf1d803"
+COOKIE_T = r"13ed28e82ab67c4f8411ef14d4d514623"
 
 # # Directory to store the fetched page
 # RSP_HTML_DIR = r"./page.html"
@@ -44,13 +44,3 @@ class Request():
         with closing(urllib2.urlopen(req)) as page:
             response = page.read()
             return response
-
-#         finally:
-#             page.close()
-#         except urllib2.URLError as e:
-#             if hasattr(e, "reason"):  # URL error
-#                 print("URL Error occurred.")
-#                 print('Reason: ', e.reason)
-#             elif hasattr(e, "code"):  # HTTP error
-#                 print("HTTP Error occurred.")
-#                 print("Error code: ", e.code)

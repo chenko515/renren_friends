@@ -37,6 +37,10 @@ class Crawl():
         }
 
     def start_crawl(self):
+        # Update "circle.db" simultaneously
+        with closing(shelve.open('./circle.db', writeback=True)) as s:
+            s["circle"] = pickle.dumps(crawl.circle)
+
         for cur_hop in range(0, self.depths):
             hop_circle = {}
             for friend in self.circle:
@@ -46,9 +50,9 @@ class Crawl():
                     hop_circle.update(parent_circle)
             else:
                 self.circle.update(hop_circle)
-                Friends.store_friends()
+#                Friends.store_friends()  # !!! For Debug
         else:
-#            Friends.print_friends()  #!!! For Debug
+            Friends.print_friends()  # !!! For Debug
             print("Crawling finished")
 
 
@@ -78,35 +82,39 @@ class Friends():
             circle = pickle.loads(s["circle"])
             for friend in circle:
                 print(friend, end=',')
-                print (circle[friend]["name"], end=',')
-                print (circle[friend]["network_class"], end=',')
-                print (circle[friend]["network_name"], end=',')
-                print (circle[friend]["hop"], end=',')
-                print (circle[friend]["friends"])
+                print(circle[friend]["name"], end=',')
+                print(circle[friend]["network_class"], end=',')
+                print(circle[friend]["network_name"], end=',')
+                print(circle[friend]["hop"], end=',')
+                print(circle[friend]["friends"])
 
     def friend_pages(self):
-        '''Count friend pages
+        '''Get friend's total page numbers
         '''
         self.url.format(self.curpage, self.core_uid)
         http_request = Request(self.url)
         rsp_src = http_request.get_response()
-        if not rsp_src:
-            raise Error()
-        
-            print("http_request.get_response() failed and return nothing",
+        # Empty rsp_src will raise parse error
+        try:
+            assert rsp_src
+        except AssertionError:
+            print("http_request.get_response() failed and return nothing, "
+                  "Check your network and cookie, ",
                   file=error_log)
-            print("Fail to get the friend's total page numbers, "
-                  "Check your network and cookie, "
-                  "See 'error.log' for more details")
+        # Parse the page and get friend's total page numbers
         soup = BeautifulSoup(rsp_src)
         text = str(soup.findAll("a", attrs={"title": unicode("最后页", "utf-8")}))
         pattern = "curpage=[0-9]+"
         r = re.search(pattern, text)
+        result = int(text[r.start() + 8: r.end()])
+
         try:
-            result = int(text[r.start() + 8: r.end()])
-        except AttributeError as e:
-#!!! Error
-            print (r, pattern, text, "re.search fail")
+            assert result
+        except AttributeError:
+            print("re.search fail",)
+            print("r:", r)
+            print("pattern:", pattern)
+            print("text:", text)
             return
         return result
 
@@ -115,8 +123,8 @@ class Friends():
         '''
         parent_circle = {}
         pages = self.friend_pages()
-        if not pages:
-            return
+        # If page is empty, skip the parse
+        pages = pages if (type(pages) != None) else 0
         for self.curpage in range(0, pages + 1):
             self.url = ("http://friend.renren.com/GetFriendList.do?"
                         "curpage={0}&id={1}"\
@@ -156,13 +164,13 @@ class Friends():
                     crawl.circle[self.core_uid]["friends"].add(uid)
 
                     #!!! For Debug
-                    print (self.core_uid, end=',')
-                    print (uid, end=',')
-                    print (parent_circle[uid]["name"], end=',')
-                    print (parent_circle[uid]["network_class"], end=',')
-                    print (parent_circle[uid]["network_name"], end=',')
-                    print (parent_circle[uid]["hop"], end=',')
-                    print (parent_circle[uid]["friends"].__sizeof__())
+                    print(self.core_uid, end=',')
+                    print(uid, end=',')
+                    print(parent_circle[uid]["name"], end=',')
+                    print(parent_circle[uid]["network_class"], end=',')
+                    print(parent_circle[uid]["network_name"], end=',')
+                    print(parent_circle[uid]["hop"], end=',')
+                    print(parent_circle[uid]["friends"].__sizeof__())
 
         return parent_circle
 
