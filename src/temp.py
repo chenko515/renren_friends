@@ -12,23 +12,16 @@ import shelve
 from contextlib import closing
 
 
-with closing(shelve.open('./friends.db')) as s:
-    circle = {}
-    circle[12345] = {
-        "friends": set([]),
-        "name": "王琛",
-        "network_class": "城市",
-        "network": "上海市",
-        "hop": 0,
-    }
-    s["circle"] = pickle.dumps(circle)
-
-with closing(shelve.open('./friends.db')) as s:
+with closing(shelve.open('./circle.db')) as s:
     circle = pickle.loads(s["circle"])
-    for friend in circle:
-        print(friend, end=' ')
-        print (circle[friend]["name"], end=' ')
-        print (circle[friend]["network_class"], end=' ')
-        print (circle[friend]["network"], end=' ')
-        print (circle[friend]["hop"], end=' ')
-        print (circle[friend]["friends"])
+    print(circle.keys())
+
+    circle = pickle.loads(s["hop_circle"])
+    print(circle.keys())
+#     for friend in circle:
+#         print(friend, end=',')
+#         print(circle[friend]["name"], end=',')
+#         print(circle[friend]["network_class"], end=',')
+#         print(circle[friend]["network_name"], end=',')
+#         print(circle[friend]["hop"], end=',')
+#         print(circle[friend]["friends"])
