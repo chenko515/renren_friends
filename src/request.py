@@ -5,19 +5,13 @@ Created on 2013-5-10
 '''
 
 
-# import urllib.request
-# import urllib.parse
-# import urllib.error
 import cookielib
 import urllib2
 from contextlib import closing
 
 
 # Set session ID: t from renren.com cookie via Chrome
-COOKIE_T = r"72a838181816742acee19e7484b453e23"
-
-# # Directory to store the fetched page
-# RSP_HTML_DIR = r"./page.html"
+COOKIE_T = r"41f4c7b8af16ebe6dad1bf1907839c4b3"
 
 
 class Request():
@@ -28,8 +22,9 @@ class Request():
     my_cookie = "".join(["t=", COOKIE_T])
 
     def __init__(self, url):
+        '''Initialize the self.url
+        '''
         self.url = url
-#         self.rsp_html_dir = RSP_HTML_DIR
 
     def get_response(self):
         '''Get response content from the HTTP request

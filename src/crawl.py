@@ -27,39 +27,40 @@ class Crawl():
     buffer_circle = {}
 
     def __init__(self, root_uid, hops):
+        '''Initialize the root_uid
+        '''
         self.depths = hops
         # start from hop0, 6 hops at most
         self.root_uid = root_uid
-        self.circle[self.root_uid] = {
+        userinfo = {
             "friends": set([]),
             "name": "王琛",
             "network_class": "城市",
             "network_name": "上海市",
             "hop": 0,
         }
+        self.circle[self.root_uid] = userinfo
+        with closing(shelve.open('./circle.db', writeback=True)) as s:
+            s[str(self.root_uid)] = userinfo
 
     def start_crawl(self):
-        with closing(shelve.open('./circle.db', writeback=True)) as s:
-            # Update "circle.db" simultaneously
-            s["circle"] = pickle.dumps(self.circle)
-            s["buffer_circle"] = pickle.dumps(self.buffer_circle)
-
-            for cur_hop in range(0, self.depths):
-                buffer_circle = copy.deepcopy(self.circle)
-                for friend in self.circle:
-                    if(self.circle[friend]["hop"] == cur_hop):
-                        parent = Friends(friend)
-                        parent.parse_friends(cur_hop, buffer_circle)
-                else:
-                    self.circle = buffer_circle
+        '''Start to crawl from the root_uid
+        '''
+        for cur_hop in range(0, self.depths):
+            buffer_circle = copy.deepcopy(self.circle)
+            for friend in self.circle:
+                if(self.circle[friend]["hop"] == cur_hop):
+                    parent = Friends(friend)
+                    parent.parse_friends(cur_hop, buffer_circle)
             else:
-                print("Crawling finished")
+                self.circle = buffer_circle
+        else:
+            print("Crawling finished")
 
 
 class Friends():
     '''User's friends and their relationship
     '''
-
     @staticmethod
     def store_friends():
         '''Store friends via shelve and pickle
@@ -68,6 +69,8 @@ class Friends():
             s["circle"] = pickle.dumps(crawl.circle)
 
     def __init__(self, core_uid):
+        '''Initialize the self.url
+        '''
         self.core_uid = core_uid
         self.curpage = 0
         self.url = (
@@ -98,12 +101,13 @@ class Friends():
         try:
             result = int(text[r.start() + 8: r.end()])
         except AttributeError:
-            print("except AttributeError, re.search fail:", file=error_log)
-            print("soup: ", soup, file=error_log)
-            print("pattern: ", pattern, file=error_log)
-            print("text: ", text, file=error_log)
-            print("r: ", r, file=error_log)
-            return
+            with open(r"./error.log", 'a+') as error_log:
+                print("except AttributeError, re.search fail:", file=error_log)
+                print("soup: ", soup, file=error_log)
+                print("pattern: ", pattern, file=error_log)
+                print("text: ", text, file=error_log)
+                print("r: ", r, '\n', file=error_log)
+                return
         return result
 
     def parse_friends(self, cur_hop, buffer_circle):
@@ -150,6 +154,9 @@ class Friends():
                 # Add parent to child
                 buffer_circle[uid]["friends"].add(self.core_uid)
 
+                with closing(shelve.open('./circle.db', writeback=True)) as s:
+                    s[str(uid)] = pickle.dumps(userinfo)
+
                 #!!! For Debug
                 print(self.core_uid, end=',')
                 print(uid, end=',')
@@ -165,5 +172,5 @@ class Friends():
 
 # Run as main module
 if __name__ == '__main__':
-    crawl = Crawl("247631683", 2)
+    crawl = Crawl("247631683", 2)  # Start from chenko, recursion depth = 2
     crawl.start_crawl()
