@@ -131,11 +131,17 @@ class Friends():
 
             for dl in friends_list_divs:
                 # Fetch uid as int type
-                uid = int(dl.dd.a["href"][36:])
-                # Being string rather than NavigableString, shelve later
-                name = str(dl.dd.a.string)
-                network_class = str(dl.findAll("dt")[1].string)
-                network_name = str(dl.findAll("dd")[1].string)
+                try:
+                    uid = int(dl.dd.a["href"][36:])
+                    # Being string rather than NavigableString, shelve later
+                    name = str(dl.dd.a.string)
+                    network_class = str(dl.findAll("dt")[1].string)
+                    network_name = str(dl.findAll("dd")[1].string)
+                except AttributeError:
+                    with open(r"./error.log", 'a+') as error_log:
+                        print("except AttributeError, fail to parse dl:", 
+                    file=error_log)
+
                 userinfo = {}
                 userinfo["name"] = name
                 userinfo["network_class"] = network_class

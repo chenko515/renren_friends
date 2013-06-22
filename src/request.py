@@ -11,7 +11,7 @@ from contextlib import closing
 
 
 # Set session ID: t from renren.com cookie via Chrome
-COOKIE_T = r"41f4c7b8af16ebe6dad1bf1907839c4b3"
+COOKIE_T = r"39edfcf8f8d6afdc6bb1cc7cb5565fc93"
 
 
 class Request():
